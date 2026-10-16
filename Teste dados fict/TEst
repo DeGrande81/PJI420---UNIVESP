@@ -1,0 +1,44 @@
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report, confusion_matrix
+import joblib
+
+# 1. Carregar o CSV de exemplo
+df = pd.read_csv("dados_exemplo_alagamento_sorocaba.csv")
+df["data_hora"] = pd.to_datetime(df["data_hora"])
+
+print("Shape:", df.shape)
+print(df.head())
+print("\nDistribuição de risco:")
+print(df["risco"].value_counts().sort_index())
+
+# 2. Features e alvo
+features = ["chuva_1h", "chuva_3h", "chuva_6h", "chuva_24h", "nivel_rio"]
+X = df[features]
+y = df["risco"]
+
+# 3. Split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.25, random_state=42, stratify=y
+)
+
+# 4. Modelo
+modelo = RandomForestClassifier(
+    n_estimators=150,
+    max_depth=8,
+    random_state=42,
+    class_weight="balanced"
+)
+modelo.fit(X_train, y_train)
+
+# 5. Avaliação
+y_pred = modelo.predict(X_test)
+print("\n=== Relatório de Classificação ===")
+print(classification_report(y_test, y_pred, target_names=["Baixo", "Médio", "Alto"]))
+print("\nMatriz de Confusão:")
+print(confusion_matrix(y_test, y_pred))
+
+# 6. Salvar modelo
+joblib.dump(modelo, "modelo_risco_alagamento.pkl")
+print("\nModelo salvo em: modelo_risco_alagamento.pkl")
